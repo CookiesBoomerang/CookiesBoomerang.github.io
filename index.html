@@ -89,11 +89,8 @@
             el.className = 'bouncing-image';
             
             const img = document.createElement('img');
-            const colors = ['FF6B6B', 'F9CA24', '6C5CE7', 'FDCB6E', '00B894', 'E84393', '0984E3', '4ECDC4', 'E17055', 'A29BFE'];
-            const randomColor = colors[Math.floor(Math.random() * colors.length)];
-            const randomNum = Math.floor(Math.random() * 1000);
-            img.src = `Sam.png`;
-            img.alt = 'Bouncing placeholder';
+            img.src = 'https://dumb.at/Sam.png';
+            img.alt = 'Bouncing image';
             
             el.appendChild(img);
             container.appendChild(el);
