@@ -1,12 +1,268 @@
-<DOCTYPE html>
-<body>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <title>hello.</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bouncing Images</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            width: 100vw;
+            font-family: Arial, sans-serif;
+            touch-action: none;
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .bouncing-image {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            animation: spin 3s infinite linear;
+            will-change: transform;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+
+        .bouncing-image:active {
+            transform: scale(1.1) rotate(0deg);
+        }
+
+        .bouncing-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (min-width: 768px) {
+            .bouncing-image {
+                width: 100px;
+                height: 100px;
+            }
+        }
+    </style>
 </head>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Micro+5&display=swap">
-<body style="background-color:#e0ecf7;">
-<p style="font-family:sans-serif;color:#6d8761;text-align:center;font-size:400%;"><b>CouCou Nicolas</b></p>
-<center><a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Learn more by clicking here</a><center>
+<body>
+    <div class="container"></div>
+
+    <script>
+        const container = document.querySelector('.container');
+        const bouncers = [];
+        const imageSize = window.innerWidth < 768 ? 80 : 100;
+        
+        function getRandomVelocity() {
+            const speed = 2 + Math.random() * 4;
+            const angle = Math.random() * Math.PI * 2;
+            return {
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed
+            };
+        }
+
+        function createBouncer(x = null, y = null) {
+            const el = document.createElement('div');
+            el.className = 'bouncing-image';
+            
+            const img = document.createElement('img');
+            const colors = ['FF6B6B', 'F9CA24', '6C5CE7', 'FDCB6E', '00B894', 'E84393', '0984E3', '4ECDC4', 'E17055', 'A29BFE'];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            const randomNum = Math.floor(Math.random() * 1000);
+            img.src = `https://www.google.com/url?sa=t&source=web&rct=j&url=https%3A%2F%2Fcharactercommunity.fandom.com%2Fwiki%2FSam_Simpson&ved=0CBUQjRxqFwoTCLja-Zr18pEDFQAAAAAdAAAAABAg&opi=89978449`;
+            img.alt = 'Bouncing placeholder';
+            
+            el.appendChild(img);
+            container.appendChild(el);
+
+            const velocity = getRandomVelocity();
+            const bouncer = {
+                element: el,
+                x: x !== null ? x : Math.random() * (window.innerWidth - imageSize),
+                y: y !== null ? y : Math.random() * (window.innerHeight - imageSize),
+                vx: velocity.vx,
+                vy: velocity.vy,
+                size: imageSize
+            };
+
+            bouncers.push(bouncer);
+
+            // Add touch/click interaction to push the image
+            el.addEventListener('mousedown', (e) => handleImageInteraction(e, bouncer));
+            el.addEventListener('touchstart', (e) => handleImageInteraction(e, bouncer));
+
+            return bouncer;
+        }
+
+        function handleImageInteraction(e, bouncer) {
+            e.stopPropagation();
+            
+            // Get click/touch position
+            const rect = bouncer.element.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            let clickX, clickY;
+            if (e.type === 'touchstart') {
+                clickX = e.touches[0].clientX;
+                clickY = e.touches[0].clientY;
+            } else {
+                clickX = e.clientX;
+                clickY = e.clientY;
+            }
+            
+            // Calculate direction from click to center
+            const dx = centerX - clickX;
+            const dy = centerY - clickY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Normalize and apply force
+            if (distance > 0) {
+                const force = 8;
+                bouncer.vx = (dx / distance) * force;
+                bouncer.vy = (dy / distance) * force;
+            }
+        }
+
+        // Create initial bouncers with staggered timing
+        const initialCount = window.innerWidth < 768 ? 5 : 7;
+        for (let i = 0; i < initialCount; i++) {
+            setTimeout(() => {
+                createBouncer();
+            }, i * 200);
+        }
+
+        function animate() {
+            // Update positions first
+            bouncers.forEach(b => {
+                b.x += b.vx;
+                b.y += b.vy;
+
+                // Bounce off walls
+                if (b.x <= 0) {
+                    b.x = 0;
+                    b.vx = Math.abs(b.vx);
+                } else if (b.x >= window.innerWidth - b.size) {
+                    b.x = window.innerWidth - b.size;
+                    b.vx = -Math.abs(b.vx);
+                }
+
+                if (b.y <= 0) {
+                    b.y = 0;
+                    b.vy = Math.abs(b.vy);
+                } else if (b.y >= window.innerHeight - b.size) {
+                    b.y = window.innerHeight - b.size;
+                    b.vy = -Math.abs(b.vy);
+                }
+
+                b.element.style.left = b.x + 'px';
+                b.element.style.top = b.y + 'px';
+            });
+
+            // Check for collisions between images
+            for (let i = 0; i < bouncers.length; i++) {
+                for (let j = i + 1; j < bouncers.length; j++) {
+                    const b1 = bouncers[i];
+                    const b2 = bouncers[j];
+                    
+                    const dx = (b1.x + b1.size / 2) - (b2.x + b2.size / 2);
+                    const dy = (b1.y + b1.size / 2) - (b2.y + b2.size / 2);
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    const minDistance = b1.size * 0.9;
+                    
+                    if (distance < minDistance && distance > 0) {
+                        // Calculate collision normal
+                        const nx = dx / distance;
+                        const ny = dy / distance;
+                        
+                        // Separate overlapping images
+                        const overlap = minDistance - distance;
+                        const separateX = nx * overlap * 0.5;
+                        const separateY = ny * overlap * 0.5;
+                        
+                        b1.x += separateX;
+                        b1.y += separateY;
+                        b2.x -= separateX;
+                        b2.y -= separateY;
+                        
+                        // Calculate relative velocity
+                        const dvx = b1.vx - b2.vx;
+                        const dvy = b1.vy - b2.vy;
+                        const dotProduct = dvx * nx + dvy * ny;
+                        
+                        // Only bounce if moving towards each other
+                        if (dotProduct > 0) {
+                            const bounce = 0.8;
+                            b1.vx -= dotProduct * nx * bounce;
+                            b1.vy -= dotProduct * ny * bounce;
+                            b2.vx += dotProduct * nx * bounce;
+                            b2.vy += dotProduct * ny * bounce;
+                        }
+                    }
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        // Add new bouncer on background click/tap
+        container.addEventListener('click', (e) => {
+            if (e.target === container) {
+                const rect = container.getBoundingClientRect();
+                createBouncer(
+                    e.clientX - rect.left - imageSize / 2,
+                    e.clientY - rect.top - imageSize / 2
+                );
+            }
+        });
+
+        container.addEventListener('touchstart', (e) => {
+            if (e.target === container) {
+                const rect = container.getBoundingClientRect();
+                const touch = e.touches[0];
+                createBouncer(
+                    touch.clientX - rect.left - imageSize / 2,
+                    touch.clientY - rect.top - imageSize / 2
+                );
+            }
+        });
+
+        // Handle window resize
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                bouncers.forEach(b => {
+                    b.x = Math.min(b.x, window.innerWidth - b.size);
+                    b.y = Math.min(b.y, window.innerHeight - b.size);
+                });
+            }, 250);
+        });
+    </script>
 </body>
 </html>
