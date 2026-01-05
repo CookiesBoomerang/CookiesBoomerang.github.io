@@ -13,7 +13,7 @@
 
         body {
             overflow: hidden;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 50%, #16a085 100%);
             height: 100vh;
             width: 100vw;
             font-family: Arial, sans-serif;
@@ -28,25 +28,25 @@
 
         .bouncing-image {
             position: absolute;
-            width: 80px;
-            height: 80px;
+            width: 120px;
+            height: 120px;
             border-radius: 15px;
             overflow: hidden;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
             animation: spin 3s infinite linear;
             will-change: transform;
             cursor: pointer;
-            transition: transform 0.1s ease;
-        }
-
-        .bouncing-image:active {
-            transform: scale(1.1) rotate(0deg);
+            background: white;
         }
 
         .bouncing-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+            width: 60%;
+            height: 60%;
+            object-fit: contain;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             pointer-events: none;
         }
 
@@ -61,8 +61,8 @@
 
         @media (min-width: 768px) {
             .bouncing-image {
-                width: 100px;
-                height: 100px;
+                width: 150px;
+                height: 150px;
             }
         }
     </style>
@@ -73,7 +73,8 @@
     <script>
         const container = document.querySelector('.container');
         const bouncers = [];
-        const imageSize = window.innerWidth < 768 ? 80 : 100;
+        const imageSize = window.innerWidth < 768 ? 120 : 150;
+        const colors = ['#FF6B6B', '#F9CA24', '#6C5CE7', '#FDCB6E', '#00B894', '#E84393', '#0984E3', '#4ECDC4'];
         
         function getRandomVelocity() {
             const speed = 2 + Math.random() * 4;
@@ -88,9 +89,20 @@
             const el = document.createElement('div');
             el.className = 'bouncing-image';
             
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            el.style.background = randomColor;
+            
             const img = document.createElement('img');
             img.src = 'https://dumb.at/Sam.png';
-            img.alt = 'Bouncing image';
+            img.alt = 'Sam';
+            img.onerror = function() {
+                // If image fails, show emoji fallback
+                el.style.display = 'flex';
+                el.style.alignItems = 'center';
+                el.style.justifyContent = 'center';
+                el.style.fontSize = '60px';
+                el.textContent = '🎨';
+            };
             
             el.appendChild(img);
             container.appendChild(el);
@@ -107,7 +119,6 @@
 
             bouncers.push(bouncer);
 
-            // Add touch/click interaction to push the image
             el.addEventListener('mousedown', (e) => handleImageInteraction(e, bouncer));
             el.addEventListener('touchstart', (e) => handleImageInteraction(e, bouncer));
 
@@ -117,7 +128,6 @@
         function handleImageInteraction(e, bouncer) {
             e.stopPropagation();
             
-            // Get click/touch position
             const rect = bouncer.element.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
@@ -131,12 +141,10 @@
                 clickY = e.clientY;
             }
             
-            // Calculate direction from click to center
             const dx = centerX - clickX;
             const dy = centerY - clickY;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
-            // Normalize and apply force
             if (distance > 0) {
                 const force = 8;
                 bouncer.vx = (dx / distance) * force;
@@ -144,7 +152,7 @@
             }
         }
 
-        // Create initial bouncers with staggered timing
+        // Create initial bouncers
         const initialCount = window.innerWidth < 768 ? 5 : 7;
         for (let i = 0; i < initialCount; i++) {
             setTimeout(() => {
@@ -153,12 +161,10 @@
         }
 
         function animate() {
-            // Update positions first
             bouncers.forEach(b => {
                 b.x += b.vx;
                 b.y += b.vy;
 
-                // Bounce off walls
                 if (b.x <= 0) {
                     b.x = 0;
                     b.vx = Math.abs(b.vx);
@@ -179,7 +185,6 @@
                 b.element.style.top = b.y + 'px';
             });
 
-            // Check for collisions between images
             for (let i = 0; i < bouncers.length; i++) {
                 for (let j = i + 1; j < bouncers.length; j++) {
                     const b1 = bouncers[i];
@@ -191,11 +196,9 @@
                     const minDistance = b1.size * 0.9;
                     
                     if (distance < minDistance && distance > 0) {
-                        // Calculate collision normal
                         const nx = dx / distance;
                         const ny = dy / distance;
                         
-                        // Separate overlapping images
                         const overlap = minDistance - distance;
                         const separateX = nx * overlap * 0.5;
                         const separateY = ny * overlap * 0.5;
@@ -205,12 +208,10 @@
                         b2.x -= separateX;
                         b2.y -= separateY;
                         
-                        // Calculate relative velocity
                         const dvx = b1.vx - b2.vx;
                         const dvy = b1.vy - b2.vy;
                         const dotProduct = dvx * nx + dvy * ny;
                         
-                        // Only bounce if moving towards each other
                         if (dotProduct > 0) {
                             const bounce = 0.8;
                             b1.vx -= dotProduct * nx * bounce;
@@ -227,7 +228,6 @@
 
         animate();
 
-        // Add new bouncer on background click/tap
         container.addEventListener('click', (e) => {
             if (e.target === container) {
                 const rect = container.getBoundingClientRect();
@@ -247,18 +247,6 @@
                     touch.clientY - rect.top - imageSize / 2
                 );
             }
-        });
-
-        // Handle window resize
-        let resizeTimer;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(() => {
-                bouncers.forEach(b => {
-                    b.x = Math.min(b.x, window.innerWidth - b.size);
-                    b.y = Math.min(b.y, window.innerHeight - b.size);
-                });
-            }, 250);
         });
     </script>
 </body>
